@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TapCoin — Mini App</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<style>
+  :root{
+    --bg: #0A0D12;
+    --bg-panel: #12161F;
+    --gold: #F2B705;
+    --gold-dim: #7A5C0A;
+    --teal: #1FC9B7;
+    --text: #E8ECF2;
+    --text-dim: #6B7688;
+    --danger: #E5484D;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; margin:0; }
+  body{
+    background: radial-gradient(circle at 50% 0%, #151A24 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; padding:20px 16px 32px;
+    overflow-x:hidden;
+  }
+
+  .eyebrow{
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--text-dim); margin-top:6px;
+  }
+  .balance{
+    font-family:'Courier New', monospace;
+    font-size:44px; font-weight:700; color:var(--gold);
+    margin:2px 0 4px; letter-spacing:1px;
+    text-shadow:0 0 24px rgba(242,183,5,0.35);
+  }
+  .balance-unit{ font-size:16px; color:var(--text-dim); font-weight:400; margin-left:6px; }
+
+  .tap-zone{
+    position:relative; width:220px; height:220px; margin:36px 0 28px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .ring{
+    position:absolute; inset:0; border-radius:50%;
+    border:1px solid rgba(242,183,5,0.15);
+  }
+  .ring.r2{ inset:14px; border-color:rgba(242,183,5,0.25); }
+  .tap-btn{
+    width:170px; height:170px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #2A2213, #171A22 70%);
+    border:2px solid var(--gold-dim);
+    color:var(--gold); font-size:15px; font-weight:600; letter-spacing:1px;
+    cursor:pointer; user-select:none;
+    box-shadow: 0 0 0 rgba(242,183,5,0.4);
+    transition: transform .08s ease, box-shadow .15s ease;
+  }
+  .tap-btn:active{ transform: scale(0.94); box-shadow:0 0 30px rgba(242,183,5,0.35); }
+  .float{
+    position:absolute; font-family:'Courier New', monospace; font-weight:700;
+    color:var(--gold); font-size:18px; pointer-events:none;
+    animation: floatUp 0.9s ease-out forwards;
+  }
+  @keyframes floatUp{
+    0%{ opacity:1; transform:translateY(0); }
+    100%{ opacity:0; transform:translateY(-60px); }
+  }
+
+  .card{
+    width:100%; max-width:360px; background:var(--bg-panel);
+    border:1px solid #1E2430; border-radius:16px; padding:18px 18px 20px;
+    margin-bottom:14px;
+  }
+  .card-title{ font-size:14px; font-weight:600; margin:0 0 4px; }
+  .card-desc{ font-size:12.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5; }
+
+  .ad-btn{
+    width:100%; padding:14px; border-radius:12px; border:none;
+    background:var(--teal); color:#04211E; font-weight:700; font-size:14px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition: opacity .15s ease;
+  }
+  .ad-btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(5,6,9,0.88);
+    display:none; align-items:center; justify-content:center; z-index:50;
+    flex-direction:column; padding:20px;
+  }
+  .modal-backdrop.show{ display:flex; }
+  .ad-frame{
+    width:100%; max-width:340px; aspect-ratio:9/16; max-height:60vh;
+    background:#000; border-radius:14px; border:1px solid #262C38;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); font-size:13px; position:relative; overflow:hidden;
+  }
+  .ad-frame::before{
+    content:'IKLAN'; position:absolute; top:10px; left:12px;
+    font-size:10px; letter-spacing:2px; color:var(--text-dim);
+  }
+  .timer-ring{ position:relative; width:64px; height:64px; margin-top:18px; }
+  .timer-ring svg{ transform:rotate(-90deg); width:64px; height:64px; }
+  .timer-ring circle{ fill:none; stroke-width:5; }
+  .timer-ring .track{ stroke:#1E2430; }
+  .timer-ring .progress{ stroke:var(--teal); stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+  .timer-num{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Courier New', monospace; font-weight:700; font-size:18px;
+  }
+  .claim-btn{
+    margin-top:18px; padding:12px 28px; border-radius:12px; border:none;
+    background:var(--gold); color:#241C02; font-weight:700; font-size:14px; cursor:pointer;
+    opacity:.4; pointer-events:none; transition:opacity .2s ease;
+  }
+  .claim-btn.ready{ opacity:1; pointer-events:auto; }
+  .modal-note{ margin-top:10px; font-size:11.5px; color:var(--text-dim); }
+</style>
+</head>
+<body>
+
+  <div class="eyebrow">SALDO KAMU</div>
+  <div class="balance" id="balance">0<span class="balance-unit">COIN</span></div>
+
+  <div class="tap-zone" id="tapZone">
+    <div class="ring"></div>
+    <div class="ring r2"></div>
+    <button class="tap-btn" id="tapBtn">TAP<br>+1</button>
+  </div>
+
+  <div class="card">
+    <p class="card-title">Tonton Iklan → +50 Coin</p>
+    <p class="card-desc">Tonton iklan penuh selama 14 detik untuk klaim bonus coin. Reward baru bisa diambil setelah timer selesai.</p>
+    <button class="ad-btn" id="watchAdBtn">▶ Tonton Iklan (14s)</button>
+  </div>
+
+  <!-- Status overlay: AdsGram merender iklan fullscreen sendiri di atas ini -->
+  <div class="modal-backdrop" id="adModal">
+    <div class="ad-frame" id="adFrame">
+      Memuat iklan...
+    </div>
+    <div class="modal-note" id="modalNote">Mohon tunggu, iklan sedang disiapkan.</div>
+  </div>
+
+  <!-- Toast hasil klaim -->
+  <div class="modal-backdrop" id="resultModal">
+    <div class="ad-frame" id="resultFrame" style="aspect-ratio:auto; height:auto; padding:28px; display:flex; flex-direction:column; align-items:center; gap:6px;">
+      <div id="resultTitle" style="font-size:16px; font-weight:700;"></div>
+      <div id="resultDesc" style="font-size:12.5px; color:var(--text-dim); text-align:center;"></div>
+    </div>
+    <button class="claim-btn ready" id="resultCloseBtn">Tutup</button>
+  </div>
+
+<script>
+  // ==== Telegram WebApp init ====
+  const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+
+  // ==== State ====
+  let balance = 0;
+  const balanceEl = document.getElementById('balance');
+  function renderBalance(){
+    balanceEl.innerHTML = balance + '<span class="balance-unit">COIN</span>';
+  }
+
+  // ==== Tap to earn ====
+  const tapBtn = document.getElementById('tapBtn');
+  const tapZone = document.getElementById('tapZone');
+  tapBtn.addEventListener('click', (e) => {
+    balance += 1;
+    renderBalance();
+    const f = document.createElement('div');
+    f.className = 'float';
+    f.textContent = '+1';
+    f.style.left = (e.offsetX + 75) + 'px';
+    f.style.top = (e.offsetY + 20) + 'px';
+    tapZone.appendChild(f);
+    setTimeout(() => f.remove(), 900);
+    tg?.HapticFeedback?.impactOccurred('light');
+  });
+
+  // ==== Rewarded Ad flow — integrasi AdsGram SDK ====
+  // GANTI "your-block-id" dengan blockId asli dari https://partner.adsgram.ai
+  // Panduan: https://docs.adsgram.ai/publisher/get-block-id
+  const ADSGRAM_BLOCK_ID = "your-block-id";
+  const REWARD_COINS = 50;
+
+  const watchAdBtn = document.getElementById('watchAdBtn');
+  const adModal = document.getElementById('adModal');
+  const resultModal = document.getElementById('resultModal');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultDesc = document.getElementById('resultDesc');
+  const resultCloseBtn = document.getElementById('resultCloseBtn');
+
+  let AdController = null;
+  if (window.Adsgram) {
+    // init cukup dipanggil sekali per blockId — SDK reuse controller yang sama
+    AdController = window.Adsgram.init({
+      blockId: ADSGRAM_BLOCK_ID,
+      debug: true // ⚠️ WAJIB diganti jadi false sebelum rilis produksi.
+                  // Saat debug:true, Adsgram kirim iklan test & TIDAK mencatat
+                  // impression asli, jadi kamu tidak akan dibayar untuk ini.
+    });
+  } else {
+    console.warn('Adsgram SDK belum ter-load. Cek koneksi script sad.min.js.');
+  }
+
+  watchAdBtn.addEventListener('click', async () => {
+    if (!AdController) {
+      showResult('SDK belum siap', 'Coba muat ulang halaman.');
+      return;
+    }
+
+    watchAdBtn.disabled = true;
+    adModal.classList.add('show'); // status "memuat" — begitu iklan tampil, SDK ambil alih layar penuh
+
+    try {
+      // AdController.show() menampilkan iklan fullscreen milik Adsgram sendiri.
+      // Promise ini resolve HANYA kalau user nonton sampai selesai (durasi
+      // iklan ditentukan advertiser/network, bukan oleh kita — biasanya 10-20 detik).
+      const result = await AdController.show();
+      adModal.classList.remove('show');
+
+      // ⚠️ Di sini kamu boleh update UI optimis, tapi saldo FINAL harus
+      // divalidasi oleh backend kamu. Contoh kirim ke server:
+      //
+      // await fetch('/api/claim-reward', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     initData: tg?.initData,   // dipakai backend utk verifikasi user Telegram asli
+      //     adResult: result          // { done, description, state, error }
+      //   })
+      // }).then(r => r.json()).then(data => { balance = data.newBalance; renderBalance(); });
+
+      balance += REWARD_COINS;
+      renderBalance();
+      tg?.HapticFeedback?.notificationOccurred('success');
+      showResult('Berhasil! 🎉', `+${REWARD_COINS} coin ditambahkan ke saldo kamu.`);
+
+    } catch (result) {
+      adModal.classList.remove('show');
+      // user skip iklan / gagal load / tidak ada iklan tersedia — tidak ada reward
+      showResult('Iklan tidak selesai ditonton', 'Reward tidak diberikan. Coba lagi nanti.');
+    } finally {
+      watchAdBtn.disabled = false;
+    }
+  });
+
+  function showResult(title, desc){
+    resultTitle.textContent = title;
+    resultDesc.textContent = desc;
+    resultModal.classList.add('show');
+  }
+  resultCloseBtn.addEventListener('click', () => resultModal.classList.remove('show'));
+</script>
+</body>
+</html>
