@@ -199,7 +199,7 @@
     // init cukup dipanggil sekali per blockId — SDK reuse controller yang sama
     AdController = window.Adsgram.init({
       blockId: ADSGRAM_BLOCK_ID,
-      debug: true // ⚠️ WAJIB diganti jadi false sebelum rilis produksi.
+      debug: false // ⚠️ WAJIB diganti jadi false sebelum rilis produksi.
                   // Saat debug:true, Adsgram kirim iklan test & TIDAK mencatat
                   // impression asli, jadi kamu tidak akan dibayar untuk ini.
     });
