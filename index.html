@@ -40,8 +40,14 @@
   }
   .balance-unit{ font-size:16px; color:var(--text-dim); font-weight:400; margin-left:6px; }
 
+  .free-badge{
+    font-size:11px; color:var(--teal); background:rgba(31,201,183,0.1);
+    border:1px solid rgba(31,201,183,0.3); padding:4px 10px; border-radius:20px;
+    margin-top:8px; letter-spacing:.5px;
+  }
+
   .tap-zone{
-    position:relative; width:220px; height:220px; margin:36px 0 28px;
+    position:relative; width:220px; height:220px; margin:28px 0 20px;
     display:flex; align-items:center; justify-content:center;
   }
   .ring{
@@ -74,7 +80,11 @@
     border:1px solid #1E2430; border-radius:16px; padding:18px 18px 20px;
     margin-bottom:14px;
   }
-  .card-title{ font-size:14px; font-weight:600; margin:0 0 4px; }
+  .card-title{ font-size:14px; font-weight:600; margin:0 0 4px; display:flex; align-items:center; gap:8px; }
+  .optional-tag{
+    font-size:9.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+    color:#04211E; background:var(--teal); padding:2px 7px; border-radius:6px;
+  }
   .card-desc{ font-size:12.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5; }
 
   .ad-btn{
@@ -101,28 +111,40 @@
     content:'IKLAN'; position:absolute; top:10px; left:12px;
     font-size:10px; letter-spacing:2px; color:var(--text-dim);
   }
-  .timer-ring{ position:relative; width:64px; height:64px; margin-top:18px; }
-  .timer-ring svg{ transform:rotate(-90deg); width:64px; height:64px; }
-  .timer-ring circle{ fill:none; stroke-width:5; }
-  .timer-ring .track{ stroke:#1E2430; }
-  .timer-ring .progress{ stroke:var(--teal); stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
-  .timer-num{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-family:'Courier New', monospace; font-weight:700; font-size:18px;
-  }
-  .claim-btn{
-    margin-top:18px; padding:12px 28px; border-radius:12px; border:none;
-    background:var(--gold); color:#241C02; font-weight:700; font-size:14px; cursor:pointer;
-    opacity:.4; pointer-events:none; transition:opacity .2s ease;
-  }
-  .claim-btn.ready{ opacity:1; pointer-events:auto; }
   .modal-note{ margin-top:10px; font-size:11.5px; color:var(--text-dim); }
+
+  .start-card{
+    width:100%; max-width:340px; background:var(--bg-panel);
+    border:1px solid #1E2430; border-radius:16px; padding:24px 20px;
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+  }
+  .start-title{ font-size:16px; font-weight:700; margin:0 0 6px; }
+  .start-desc{ font-size:12.5px; color:var(--text-dim); margin:0 0 18px; line-height:1.5; }
+  .start-btn-row{ display:flex; gap:10px; width:100%; }
+  .start-btn-row button{
+    flex:1; padding:13px 10px; border-radius:12px; border:none;
+    font-weight:700; font-size:13px; cursor:pointer;
+  }
+  .start-watch{ background:var(--teal); color:#04211E; }
+  .start-skip{ background:transparent; color:var(--text-dim); border:1px solid #262C38 !important; }
 </style>
 </head>
 <body>
 
+  <div class="modal-backdrop show" id="startModal">
+    <div class="start-card">
+      <div class="start-title">Selamat datang di TapCoin 👋</div>
+      <p class="start-desc">Mau nonton iklan pembuka buat bonus +50 coin? Ini opsional — kamu bisa langsung main tanpa nonton juga.</p>
+      <div class="start-btn-row">
+        <button class="start-skip" id="startSkipBtn">Lewati</button>
+        <button class="start-watch" id="startWatchBtn">▶ Tonton (+50)</button>
+      </div>
+    </div>
+  </div>
+
   <div class="eyebrow">SALDO KAMU</div>
   <div class="balance" id="balance">0<span class="balance-unit">COIN</span></div>
+  <div class="free-badge">Tap gratis tanpa batas — tidak perlu nonton iklan</div>
 
   <div class="tap-zone" id="tapZone">
     <div class="ring"></div>
@@ -131,9 +153,9 @@
   </div>
 
   <div class="card">
-    <p class="card-title">Tonton Iklan → +50 Coin</p>
-    <p class="card-desc">Tonton iklan penuh selama 14 detik untuk klaim bonus coin. Reward baru bisa diambil setelah timer selesai.</p>
-    <button class="ad-btn" id="watchAdBtn">▶ Tonton Iklan (14s)</button>
+    <p class="card-title">Tonton Iklan → +50 Coin <span class="optional-tag">Opsional</span></p>
+    <p class="card-desc">Bonus tambahan, bukan syarat wajib. Kamu tetap bisa terus tap dan kumpulkan coin kapan saja tanpa nonton iklan ini.</p>
+    <button class="ad-btn" id="watchAdBtn">▶ Tonton Iklan Bonus (14s)</button>
   </div>
 
   <!-- Status overlay: AdsGram merender iklan fullscreen sendiri di atas ini -->
@@ -150,7 +172,7 @@
       <div id="resultTitle" style="font-size:16px; font-weight:700;"></div>
       <div id="resultDesc" style="font-size:12.5px; color:var(--text-dim); text-align:center;"></div>
     </div>
-    <button class="claim-btn ready" id="resultCloseBtn">Tutup</button>
+    <button class="claim-btn ready" id="resultCloseBtn" style="margin-top:18px; padding:12px 28px; border-radius:12px; border:none; background:var(--gold); color:#241C02; font-weight:700; font-size:14px; cursor:pointer;">Tutup</button>
   </div>
 
 <script>
@@ -165,7 +187,7 @@
     balanceEl.innerHTML = balance + '<span class="balance-unit">COIN</span>';
   }
 
-  // ==== Tap to earn ====
+  // ==== Tap to earn — SELALU aktif, tidak pernah dikunci di belakang iklan ====
   const tapBtn = document.getElementById('tapBtn');
   const tapZone = document.getElementById('tapZone');
   tapBtn.addEventListener('click', (e) => {
@@ -181,7 +203,7 @@
     tg?.HapticFeedback?.impactOccurred('light');
   });
 
-  // ==== Rewarded Ad flow — integrasi AdsGram SDK ====
+  // ==== Rewarded Ad flow — integrasi AdsGram SDK (100% opsional, bonus saja) ====
   // GANTI "your-block-id" dengan blockId asli dari https://partner.adsgram.ai
   // Panduan: https://docs.adsgram.ai/publisher/get-block-id
   const ADSGRAM_BLOCK_ID = "40991";
@@ -199,55 +221,55 @@
     // init cukup dipanggil sekali per blockId — SDK reuse controller yang sama
     AdController = window.Adsgram.init({
       blockId: ADSGRAM_BLOCK_ID,
-      debug: false // ⚠️ WAJIB diganti jadi false sebelum rilis produksi.
-                  // Saat debug:true, Adsgram kirim iklan test & TIDAK mencatat
-                  // impression asli, jadi kamu tidak akan dibayar untuk ini.
+      debug: false // ⚠️ WAJIB false sebelum rilis produksi (debug:true = iklan test, tidak dibayar).
     });
   } else {
     console.warn('Adsgram SDK belum ter-load. Cek koneksi script sad.min.js.');
   }
 
-  watchAdBtn.addEventListener('click', async () => {
+  // Fungsi reusable — dipakai tombol bonus di card MAUPUN tombol di modal pembuka.
+  // Selalu opt-in: hanya jalan kalau user klik tombol nonton, tidak pernah auto-play.
+  async function playRewardedAd(triggerBtn){
     if (!AdController) {
       showResult('SDK belum siap', 'Coba muat ulang halaman.');
       return;
     }
 
-    watchAdBtn.disabled = true;
+    if (triggerBtn) triggerBtn.disabled = true;
     adModal.classList.add('show'); // status "memuat" — begitu iklan tampil, SDK ambil alih layar penuh
 
     try {
       // AdController.show() menampilkan iklan fullscreen milik Adsgram sendiri.
-      // Promise ini resolve HANYA kalau user nonton sampai selesai (durasi
-      // iklan ditentukan advertiser/network, bukan oleh kita — biasanya 10-20 detik).
+      // Promise ini resolve HANYA kalau user nonton sampai selesai.
       const result = await AdController.show();
       adModal.classList.remove('show');
 
-      // ⚠️ Di sini kamu boleh update UI optimis, tapi saldo FINAL harus
-      // divalidasi oleh backend kamu. Contoh kirim ke server:
+      // ⚠️ Saldo FINAL harus divalidasi backend, bukan cuma di client:
       //
       // await fetch('/api/claim-reward', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify({
-      //     initData: tg?.initData,   // dipakai backend utk verifikasi user Telegram asli
-      //     adResult: result          // { done, description, state, error }
+      //     initData: tg?.initData,
+      //     adResult: result
       //   })
       // }).then(r => r.json()).then(data => { balance = data.newBalance; renderBalance(); });
 
       balance += REWARD_COINS;
       renderBalance();
       tg?.HapticFeedback?.notificationOccurred('success');
-      showResult('Berhasil! 🎉', `+${REWARD_COINS} coin ditambahkan ke saldo kamu.`);
+      showResult('Berhasil! 🎉', `+${REWARD_COINS} coin bonus ditambahkan. Kamu tetap bisa lanjut tap kapan saja.`);
 
     } catch (result) {
       adModal.classList.remove('show');
-      // user skip iklan / gagal load / tidak ada iklan tersedia — tidak ada reward
-      showResult('Iklan tidak selesai ditonton', 'Reward tidak diberikan. Coba lagi nanti.');
+      // user skip iklan / gagal load — tidak ada reward, tapi tap tetap jalan normal
+      showResult('Iklan tidak selesai ditonton', 'Bonus tidak diberikan, tapi kamu tetap bisa lanjut tap seperti biasa.');
     } finally {
-      watchAdBtn.disabled = false;
+      if (triggerBtn) triggerBtn.disabled = false;
     }
-  });
+  }
+
+  watchAdBtn.addEventListener('click', () => playRewardedAd(watchAdBtn));
 
   function showResult(title, desc){
     resultTitle.textContent = title;
@@ -255,6 +277,23 @@
     resultModal.classList.add('show');
   }
   resultCloseBtn.addEventListener('click', () => resultModal.classList.remove('show'));
+
+  // ==== Modal pembuka (startup) — SELALU skippable, tidak pernah auto-play ====
+  // "Lewati" aktif sejak awal (bukan nunggu timer) supaya user bisa langsung
+  // masuk ke game kapan saja. Ini yang membedakan dari interstitial paksa
+  // yang melanggar aturan Adsgram (clause 3/4/6).
+  const startModal = document.getElementById('startModal');
+  const startWatchBtn = document.getElementById('startWatchBtn');
+  const startSkipBtn = document.getElementById('startSkipBtn');
+
+  startSkipBtn.addEventListener('click', () => {
+    startModal.classList.remove('show');
+  });
+
+  startWatchBtn.addEventListener('click', async () => {
+    startModal.classList.remove('show'); // tutup dulu modal pembuka, baru tampilkan iklan
+    await playRewardedAd(startWatchBtn);
+  });
 </script>
 </body>
 </html>
